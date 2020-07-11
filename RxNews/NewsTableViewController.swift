@@ -43,22 +43,16 @@ final class NewsTableViewController: UITableViewController {
   
   private func populateNews() {
     let url = URL(string: "https://newsapi.org/v2/top-headlines?country=us&apiKey=0ce861a79263459cb166c57fe52983ed")!
-    Observable.just(url)
-      .flatMap { url -> Observable<Data> in
-        let request = URLRequest(url: url)
-        return URLSession.shared.rx.data(request: request)
-    }
-    .map { data -> [Article]? in
-      return try? JSONDecoder().decode(ArticlesList.self, from: data).articles
-    }
-    .subscribe(onNext: { [unowned self] articles in
-      if let articles = articles {
-        self.articles = articles
-        DispatchQueue.main.async {
-          self.tableView.reloadData()
+    let resource = Resource<ArticlesList>(url: url)
+    URLRequest.load(resource: resource)
+      .subscribe(onNext: { [unowned self] articlelist in
+        if let articlelist = articlelist {
+          self.articles = articlelist.articles
+          DispatchQueue.main.async {
+            self.tableView.reloadData()
+          }
         }
-      }
-    })
-      .disposed(by: disposeBag)
+      })
+    .disposed(by: disposeBag)
   }
 }
